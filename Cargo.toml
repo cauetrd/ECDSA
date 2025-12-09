@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+hex = "0.4.3"
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
-p256 = "0.13.2"
+k256 = "0.13"        # <-- usar k256 (secp256k1)
 rand_core = "0.6"
 sha2 = "0.10.9"
+hmac = "0.12"
+lazy_static = "1.4"

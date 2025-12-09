@@ -1,2 +1,1 @@
-Esse é o arquivo a ser assinado;
-
+Esse é o arquivo a ser assinados

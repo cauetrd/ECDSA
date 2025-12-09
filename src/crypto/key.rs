@@ -1,9 +1,10 @@
-use p256::{
+use k256::{
     ecdsa::{SigningKey, VerifyingKey},
-    elliptic_curve::sec1::ToEncodedPoint,
+    EncodedPoint,
 };
 use rand_core::OsRng;
 
+use num_bigint::BigInt;
 use std::fs;
 use std::path::Path;
 
@@ -22,11 +23,6 @@ impl PrivateKey {
     pub fn generate() -> Self {
         let signing_key = SigningKey::random(&mut OsRng);
         Self { inner: signing_key}
-    }
-
-    // Exporta em formato binário simples
-    pub fn to_pem(&self) -> Vec<u8> {
-        self.inner.to_bytes().to_vec()
     }
 
     // Exporta em formato binário simples
@@ -63,6 +59,17 @@ impl PrivateKey {
         let bytes = fs::read(full_path)?;
         Ok(Self::from_bytes(&bytes).unwrap())
     }
+
+    // Retorna o escalar da chave privada como BigInt (para compatibilidade com ecdsa.rs)
+    pub fn to_scalar(&self) -> BigInt {
+        let bytes = self.inner.to_bytes();
+        BigInt::from_bytes_be(num_bigint::Sign::Plus, bytes.as_ref())
+    }
+
+    // Expor a SigningKey interna para uso em crypto::ecdsa
+    pub fn signing_key(&self) -> &SigningKey {
+        &self.inner
+    }
 }
 
 impl PublicKey {
@@ -73,7 +80,7 @@ impl PublicKey {
 
     // importa chave pública de formato binário simples
     pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
-        let encoded_point = p256::EncodedPoint::from_bytes(bytes).ok()?;
+        let encoded_point = EncodedPoint::from_bytes(bytes).ok()?;
         let verifying_key = VerifyingKey::from_encoded_point(&encoded_point).ok()?;
         Some(Self { inner: verifying_key})
     }
@@ -93,4 +100,21 @@ impl PublicKey {
         let bytes = fs::read(full_path)?;
         Ok(Self::from_bytes(&bytes).unwrap())
     }    
+
+    // Retorna as coordenadas (x, y) do ponto como BigInt (para compatibilidade com ecdsa.rs)
+    pub fn to_coordinates(&self) -> (BigInt, BigInt) {
+        let point = self.inner.to_encoded_point(false);
+        let x_bytes = point.x().unwrap();
+        let y_bytes = point.y().unwrap();
+
+        let x = BigInt::from_bytes_be(num_bigint::Sign::Plus, x_bytes);
+        let y = BigInt::from_bytes_be(num_bigint::Sign::Plus, y_bytes);
+
+        (x, y)
+    }
+
+    // Expor a VerifyingKey interna para uso em crypto::ecdsa
+    pub fn verifying_key(&self) -> &VerifyingKey {
+        &self.inner
+    }
 }
