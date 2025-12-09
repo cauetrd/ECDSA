@@ -1,95 +1,116 @@
 mod crypto;
 
-use std::fs;
-use std::path::{Path, PathBuf};
 use std::env;
+use std::fs;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use crypto::{ecdsa, encoding};
 use crypto::key::{PrivateKey, PublicKey};
 
-
 fn main() {
-    // Uso:
-    //   ecdsa 1 <nome_chaves>
-    //   ecdsa 2 <nome_chaves> <arquivo>
-    //   ecdsa 3 <nome_chaves> <arquivo>
-    let mut args = env::args().skip(1); // pula o nome do binário
+    loop {
+        println!("\n=== Sistema de Assinatura Digital ECDSA ===");
+        println!("Use o teclado para escolher uma opção:");
+        println!("  1) Gerar par de chaves");
+        println!("  2) Assinar arquivo");
+        println!("  3) Verificar assinatura de arquivo");
+        println!("  4) Sair");
+        print!("\nDigite a opção desejada: ");
+        // Garante que o prompt apareça imediatamente.
+        io::stdout().flush().ok();
 
-    let op = match args.next() {
-        Some(v) => v,
-        None => {
-            print_usage();
-            return;
-        }
-    };
+        let opcao = match read_line_trimmed() {
+            Some(v) => v,
+            None => {
+                println!("Entrada inválida. Tente novamente.");
+                continue;
+            }
+        };
 
-    match op.as_str() {
-        "1" => {
-            let nome_chaves = match args.next() {
-                Some(n) => n,
-                None => {
-                    eprintln!("Erro: falta o parâmetro <nome_chaves>.");
-                    print_usage();
-                    return;
-                }
-            };
-            generate_keys(&nome_chaves);
-        }
-        "2" => {
-            let nome_chaves = match args.next() {
-                Some(n) => n,
-                None => {
-                    eprintln!("Erro: falta o parâmetro <nome_chaves>.");
-                    print_usage();
-                    return;
-                }
-            };
-            let nome_arquivo = match args.next() {
-                Some(f) => f,
-                None => {
-                    eprintln!("Erro: falta o parâmetro <arquivo>.");
-                    print_usage();
-                    return;
-                }
-            };
-            sign_file(&nome_chaves, &nome_arquivo);
-        }
-        "3" => {
-            let nome_chaves = match args.next() {
-                Some(n) => n,
-                None => {
-                    eprintln!("Erro: falta o parâmetro <nome_chaves>.");
-                    print_usage();
-                    return;
-                }
-            };
-            let nome_arquivo = match args.next() {
-                Some(f) => f,
-                None => {
-                    eprintln!("Erro: falta o parâmetro <arquivo>.");
-                    print_usage();
-                    return;
-                }
-            };
-            verify_file(&nome_chaves, &nome_arquivo);
-        }
-        _ => {
-            eprintln!("Opção inválida: {}", op);
-            print_usage();
+        match opcao.as_str() {
+            "1" => {
+                println!("\n=== Gerar Par de Chaves ===");
+                print!("Digite o nome base para as chaves (ex: alice): ");
+                io::stdout().flush().ok();
+
+                let nome_chaves = match read_line_trimmed() {
+                    Some(n) if !n.is_empty() => n,
+                    _ => {
+                        println!("Nome inválido. Operação cancelada.");
+                        continue;
+                    }
+                };
+
+                generate_keys(&nome_chaves);
+            }
+            "2" => {
+                println!("\n=== Assinar Arquivo ===");
+                print!("Digite o nome base das chaves (ex: alice): ");
+                io::stdout().flush().ok();
+                let nome_chaves = match read_line_trimmed() {
+                    Some(n) if !n.is_empty() => n,
+                    _ => {
+                        println!("Nome inválido. Operação cancelada.");
+                        continue;
+                    }
+                };
+
+                print!("Digite o nome do arquivo em 'files/': ");
+                io::stdout().flush().ok();
+                let nome_arquivo = match read_line_trimmed() {
+                    Some(f) if !f.is_empty() => f,
+                    _ => {
+                        println!("Nome de arquivo inválido. Operação cancelada.");
+                        continue;
+                    }
+                };
+
+                sign_file(&nome_chaves, &nome_arquivo);
+            }
+            "3" => {
+                println!("\n=== Verificar Assinatura de Arquivo ===");
+                print!("Digite o nome base das chaves (ex: alice): ");
+                io::stdout().flush().ok();
+                let nome_chaves = match read_line_trimmed() {
+                    Some(n) if !n.is_empty() => n,
+                    _ => {
+                        println!("Nome inválido. Operação cancelada.");
+                        continue;
+                    }
+                };
+
+                print!("Digite o nome do arquivo em 'files/': ");
+                io::stdout().flush().ok();
+                let nome_arquivo = match read_line_trimmed() {
+                    Some(f) if !f.is_empty() => f,
+                    _ => {
+                        println!("Nome de arquivo inválido. Operação cancelada.");
+                        continue;
+                    }
+                };
+
+                verify_file(&nome_chaves, &nome_arquivo);
+            }
+            "4" => {
+                println!("Saindo... até a próxima!");
+                break;
+            }
+            _ => {
+                println!("Opção inválida. Use 1, 2, 3 ou 4.");
+            }
         }
     }
 }
 
-fn print_usage() {
-    println!("=== Sistema de Assinatura Digital ECDSA ===\n");
-    println!("Uso:");
-    println!("  ecdsa 1 <nome_chaves>              # gerar chaves");
-    println!("  ecdsa 2 <nome_chaves> <arquivo>    # assinar arquivo");
-    println!("  ecdsa 3 <nome_chaves> <arquivo>    # verificar assinatura");
-    println!();
-    println!("Exemplos:");
-    println!("  ecdsa 1 alice");
-    println!("  ecdsa 2 alice assinar.txt");
-    println!("  ecdsa 3 alice assinar.txt");
+/// Lê uma linha da entrada padrão e retorna a string sem quebras de linha
+/// ou espaços extras nas pontas. Em caso de erro, retorna `None`.
+fn read_line_trimmed() -> Option<String> {
+    let mut input = String::new();
+    if io::stdin().read_line(&mut input).is_err() {
+        return None;
+    }
+    let trimmed = input.trim().to_string();
+    Some(trimmed)
 }
 
 fn generate_keys(nome_chaves: &str) {
