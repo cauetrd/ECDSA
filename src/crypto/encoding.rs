@@ -18,12 +18,6 @@ pub struct VerifyResult {
     pub is_valid: bool,
 }
 
-/// Calcula o SHA‑256 de um arquivo e retorna em hex (minúsculo)
-pub fn hash_file_hex(path: &Path) -> io::Result<String> {
-    let hash_bytes = sha256_file(path)?;
-    Ok(hex::encode(hash_bytes))
-}
-
 /// Assina o conteúdo de um arquivo:
 /// 1. Faz SHA‑256 do arquivo
 /// 2. Usa ECDSA (k256) para assinar o hash

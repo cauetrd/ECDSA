@@ -1,12 +1,8 @@
-use k256::{
-    ecdsa::{SigningKey, VerifyingKey},
-    EncodedPoint,
-};
-use rand_core::OsRng;
-
-use num_bigint::BigInt;
 use std::fs;
 use std::path::Path;
+use rand_core::OsRng;
+use k256::EncodedPoint;
+use k256::ecdsa::{SigningKey, VerifyingKey};
 
 const KEYS_DIR: &str = "keys";
 
@@ -60,12 +56,6 @@ impl PrivateKey {
         Ok(Self::from_bytes(&bytes).unwrap())
     }
 
-    // Retorna o escalar da chave privada como BigInt (para compatibilidade com ecdsa.rs)
-    pub fn to_scalar(&self) -> BigInt {
-        let bytes = self.inner.to_bytes();
-        BigInt::from_bytes_be(num_bigint::Sign::Plus, bytes.as_ref())
-    }
-
     // Expor a SigningKey interna para uso em crypto::ecdsa
     pub fn signing_key(&self) -> &SigningKey {
         &self.inner
@@ -100,18 +90,6 @@ impl PublicKey {
         let bytes = fs::read(full_path)?;
         Ok(Self::from_bytes(&bytes).unwrap())
     }    
-
-    // Retorna as coordenadas (x, y) do ponto como BigInt (para compatibilidade com ecdsa.rs)
-    pub fn to_coordinates(&self) -> (BigInt, BigInt) {
-        let point = self.inner.to_encoded_point(false);
-        let x_bytes = point.x().unwrap();
-        let y_bytes = point.y().unwrap();
-
-        let x = BigInt::from_bytes_be(num_bigint::Sign::Plus, x_bytes);
-        let y = BigInt::from_bytes_be(num_bigint::Sign::Plus, y_bytes);
-
-        (x, y)
-    }
 
     // Expor a VerifyingKey interna para uso em crypto::ecdsa
     pub fn verifying_key(&self) -> &VerifyingKey {

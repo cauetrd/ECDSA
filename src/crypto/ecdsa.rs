@@ -4,7 +4,7 @@ use k256::ecdsa::{
     Signature as K256Signature,
     signature::{Signer, Verifier},
 };
-use core::convert::TryFrom; // <-- adicionar
+use core::convert::TryFrom;
 
 /// Estrutura da assinatura ECDSA (formato usado em arquivo)
 pub struct Signature {
