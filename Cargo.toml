@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sha2 = "0.10"
+p256 = "0.13.2"
+rand_core = "0.6"
+sha2 = "0.10.9"
