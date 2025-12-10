@@ -1,10 +1,4 @@
-//! Módulo raiz do subsistema criptográfico.
-//!
-//! Aqui são reexportados os submódulos responsáveis por:
-//! - gerenciamento de chaves (`key`)
-//! - primitivas ECDSA (`ecdsa`)
-//! - operações de alto nível de assinatura/verificação (`encoding`)
-//! - utilitários relacionados a arquivos (`files`)
+//! Módulo raiz do subsistema criptográfico (chaves, ECDSA e utilitários).
 
 pub mod key;
 pub mod ecdsa;

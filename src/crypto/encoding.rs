@@ -1,8 +1,4 @@
-//! Camada de alto nível para assinar e verificar arquivos.
-//!
-//! Este módulo combina o cálculo de hash (`SHA‑256`) com as rotinas de
-//! assinatura ECDSA para oferecer funções simples de "assinar arquivo" e
-//! "verificar assinatura de arquivo".
+//! Assinatura e verificação de arquivos usando ECDSA sobre SHA-256.
 
 use std::{io, path::Path};
 
@@ -12,27 +8,15 @@ use crate::crypto::{
     key::{PrivateKey, PublicKey},
 };
 
-/// Resultado retornado após uma operação de assinatura de arquivo.
 pub struct SignResult {
-    /// Hash SHA‑256 do arquivo em formato hexadecimal.
     pub hash_hex: String,
-    /// Assinatura ECDSA gerada para o hash do arquivo.
     pub signature: ecdsa::Signature,
 }
 
-/// Resultado retornado após uma operação de verificação de assinatura.
 pub struct VerifyResult {
-    /// Hash SHA‑256 do arquivo em formato hexadecimal.
     pub hash_hex: String,
-    /// Indica se a assinatura fornecida é válida para o arquivo.
     pub is_valid: bool,
 }
-
-/// Assina o conteúdo de um arquivo.
-///
-/// Etapas:
-/// 1. Calcula o SHA‑256 do arquivo indicado por `path`.
-/// 2. Usa ECDSA (via `k256`) para assinar o hash com a chave privada.
 pub fn sign_file(path: &Path, private: &PrivateKey) -> io::Result<SignResult> {
     let hash_bytes = sha256_file(path)?;
     let hash_hex = hex::encode(&hash_bytes);
@@ -40,12 +24,6 @@ pub fn sign_file(path: &Path, private: &PrivateKey) -> io::Result<SignResult> {
 
     Ok(SignResult { hash_hex, signature })
 }
-
-/// Verifica a assinatura de um arquivo.
-///
-/// Etapas:
-/// 1. Calcula o SHA‑256 do arquivo indicado por `path`.
-/// 2. Verifica a assinatura ECDSA do hash usando a chave pública.
 pub fn verify_file(
     path: &Path,
     public: &PublicKey,

@@ -1,7 +1,4 @@
-//! Utilitários para manipulação de arquivos.
-//!
-//! No momento, este módulo expõe apenas uma função para cálculo
-//! de hash SHA‑256 de arquivos de forma eficiente em memória.
+//! Utilitários de arquivo usados para cálculo de hash.
 
 use std::fs::File;
 use std::io::{BufReader, Read};
@@ -9,10 +6,6 @@ use std::path::Path;
 
 use sha2::{Digest, Sha256};
 
-/// Calcula o hash SHA‑256 do arquivo indicado por `path`.
-///
-/// O arquivo é lido em blocos (buffer) para evitar carregá‑lo
-/// inteiro na memória, o que é importante para arquivos grandes.
 pub fn sha256_file(path: &Path) -> std::io::Result<[u8; 32]> {
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
